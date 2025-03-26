@@ -214,7 +214,6 @@
       const joystick = document.getElementById('joystick');
       const joystickKnob = document.getElementById('joystickKnob');
       const shootBtn = document.getElementById('shootBtn');
-      const swapBtn = document.getElementById('swapBtn');
       const interactBtn = document.getElementById('interactBtn');
       const strafeLeftBtn = document.getElementById('strafeLeftBtn');
       const strafeRightBtn = document.getElementById('strafeRightBtn');
@@ -647,7 +646,6 @@
       window.addEventListener('keyup', (e) => { keys[e.key] = false; });
       
       shootBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); shoot(); });
-      swapBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); swapWeapon(); });
       interactBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); interact(); });
 
       // Main game loop – level advances only when all enemies are killed AND player is on an end tile.
@@ -991,13 +989,11 @@
         keys[e.key] = true;
         if (e.key === " ") { e.preventDefault(); shoot(); }
         if (e.key === "e") { e.preventDefault(); interact(); }
-        if (e.key === "q") { e.preventDefault(); swapWeapon(); }
       });
       window.addEventListener('keyup', (e) => { keys[e.key] = false; });
 
       // Shoot, swap, and interact buttons
       shootBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); shoot(); });
-      swapBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); swapWeapon(); });
       interactBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); interact(); });
 
       // Joystick event handling

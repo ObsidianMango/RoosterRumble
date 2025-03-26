@@ -34,7 +34,7 @@
       text-align: center;
       font-size: 12px;
       color: #fff;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0, 0, 0, 0.6);
       z-index: 10;
     }
     /* Final screen overlay */
@@ -44,7 +44,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.9);
+      background: rgba(0, 0, 0, 0.9);
       display: none;
       flex-direction: column;
       align-items: center;
@@ -75,7 +75,7 @@
       50% { transform: scale(1.1); }
       100% { transform: scale(1); }
     }
-    /* Joystick & its knob */
+    /* Joystick & knob */
     #joystick {
       position: absolute;
       bottom: 10%;
@@ -84,7 +84,7 @@
       height: 80px;
       border: 2px solid #aaa;
       border-radius: 50%;
-      background: rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.1);
       touch-action: none;
       z-index: 10;
     }
@@ -94,12 +94,12 @@
       height: 40px;
       top: 50%;
       left: 50%;
-      background: rgba(255,255,255,0.3);
+      background: rgba(255, 255, 255, 0.3);
       border: 2px solid #fff;
       border-radius: 50%;
       transform: translate(-50%, -50%);
     }
-    /* Shoot button (right-bottom) */
+    /* Shoot button */
     #shootBtn {
       position: absolute;
       bottom: 5%;
@@ -108,7 +108,7 @@
       height: 80px;
       border: 2px solid #aaa;
       border-radius: 50%;
-      background: rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.1);
       font-size: 36px;
       line-height: 80px;
       text-align: center;
@@ -117,7 +117,7 @@
       touch-action: none;
       z-index: 10;
     }
-    /* Swap & Interact buttons (right side, above shoot) */
+    /* Swap & Interact buttons */
     #swapBtn, #interactBtn {
       position: absolute;
       right: 5%;
@@ -125,7 +125,7 @@
       height: 80px;
       border: 2px solid #aaa;
       border-radius: 50%;
-      background: rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.1);
       font-size: 28px;
       line-height: 80px;
       text-align: center;
@@ -136,7 +136,7 @@
     }
     #swapBtn { bottom: 30%; }
     #interactBtn { bottom: 15%; }
-    /* Strafe buttons (below joystick) */
+    /* Strafe buttons */
     #strafeLeftBtn, #strafeRightBtn {
       position: absolute;
       bottom: 10%;
@@ -145,7 +145,7 @@
       height: 50px;
       border: 2px solid #aaa;
       border-radius: 50%;
-      background: rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.1);
       font-size: 24px;
       line-height: 50px;
       text-align: center;
@@ -166,7 +166,7 @@
     <p id="finalScore"></p>
     <div id="playAgainBtn">Play Again</div>
   </div>
-  <!-- Game Controls -->
+  <!-- On-screen controls -->
   <div id="joystick"><div id="joystickKnob"></div></div>
   <div id="strafeLeftBtn">←</div>
   <div id="strafeRightBtn">→</div>
@@ -175,577 +175,571 @@
   <div id="interactBtn">🚪</div>
 
   <script>
-  // Register Service Worker for PWA
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-      .then(registration => {
-        console.log('Service Worker registered with scope:', registration.scope);
-      })
-      .catch(error => {
-        console.error('Service Worker registration failed:', error);
-      });
-  }
-
-  (function() {
-    // Declare lastTime only once.
-    let lastTime = performance.now();
-    // Strafe flags
-    let strafeLeftActive = false;
-    let strafeRightActive = false;
-    const strafeSpeed = 3.0;
-
-    // We'll store the exit tile (end tile) coordinates here.
-    let exitTile = null;
-
-    // Function to check if player is on an end tile (cell value 4)
-    function checkEndTile() {
-      const mx = Math.floor(player.x);
-      const my = Math.floor(player.y);
-      return levelData[my] && levelData[my][mx] === 4;
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('SW registered with scope:', reg.scope))
+        .catch(err => console.error('SW registration failed:', err));
     }
 
-    // Canvas & context setup
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+    (function() {
+      let lastTime = performance.now();
+      let strafeLeftActive = false;
+      let strafeRightActive = false;
+      const strafeSpeed = 3.0;
+      let exitTile = null;
 
-    // UI Elements
-    const overlay = document.getElementById('overlay');
-    const finalScreen = document.getElementById('finalScreen');
-    const finalTimeElem = document.getElementById('finalTime');
-    const finalScoreElem = document.getElementById('finalScore');
-    const playAgainBtn = document.getElementById('playAgainBtn');
-    const joystick = document.getElementById('joystick');
-    const joystickKnob = document.getElementById('joystickKnob');
-    const shootBtn = document.getElementById('shootBtn');
-    const swapBtn = document.getElementById('swapBtn');
-    const interactBtn = document.getElementById('interactBtn');
-    const strafeLeftBtn = document.getElementById('strafeLeftBtn');
-    const strafeRightBtn = document.getElementById('strafeRightBtn');
-
-    // Game state variables
-    let currentLevel = 0;
-    let score = 0;
-    let levelData = []; // 0: empty, 1: wall, 2: closed door, 3: open door, 4: end tile
-    let enemies = [];   // {x, y, dx, dy, isGhost, health, shootCooldown}
-    let pickups = [];   // {x, y, type} where type: 'rock' or 'dagger'
-    let player = { x: 0, y: 0, angle: 0, health: 10, weapon: "🍗" };
-    let inventory = ["🍗"];
-    let projectiles = []; // {x, y, dx, dy, rotation, rotationSpeed, weapon}
-    let particles = [];   // {x, y, z, vx, vy, vz, life, color}
-    let gameStartTime = performance.now();
-    let gameOver = false;
-    let damageFlashTimer = 0;
-
-    // --- Door Animation Settings ---
-    let doorStates = {}; // key: "x,y", value: progress (0 to 1) for doors being opened
-    const doorSpeed = 0.5;
-    const doorMaxOffset = 50;
-
-    // Level definitions – "E" marks an end tile.
-    const levels = [
-      [
-        "###########",
-        "#P....R..E#",
-        "#.....K..#",
-        "#...d....#",
-        "#...#....#",
-        "#.....R..#",
-        "###########"
-      ],
-      [
-        "###############",
-        "#P...R...D...#",
-        "#.....#.......#",
-        "#..G..#...R..#",
-        "#.....#.....E#",
-        "#...R...G....#",
-        "###############"
-      ]
-    ];
-
-    // Colors & settings
-    const ceilingColor = "#005588"; 
-    const floorColor = "#444444";
-    const wallColor = "#c0c0c0";
-    const wallColorDark = "#888888";
-    const doorColor = "#8B4513";  // Brown for closed door
-    const explosionColorsDefault = ["255,165,0", "255,100,0", "255,255,0"];
-    const ghostExplosionColor = "255,0,0";
-
-    // Explosion colors based on weapon type:
-    function createExplosionForWeapon(x, y, weapon) {
-      let colors;
-      if (weapon === "🍗") {
-        colors = ["139,69,19", "255,255,255"]; // brown and white
-      } else if (weapon === "🪨") {
-        colors = ["0,0,0", "128,128,128"]; // black and gray
-      } else if (weapon === "🗡️") {
-        colors = ["192,192,192"]; // silver
-      } else {
-        colors = explosionColorsDefault;
+      function checkEndTile() {
+        const mx = Math.floor(player.x);
+        const my = Math.floor(player.y);
+        return levelData[my] && levelData[my][mx] === 4;
       }
-      const count = 150;
-      for (let i = 0; i < count; i++) {
-        const angle = Math.random() * 2 * Math.PI;
-        const speed = Math.random() * 3 + 1;
-        const vx = Math.sin(angle) * speed;
-        const vy = -Math.cos(angle) * speed;
-        const vz = (Math.random()-0.5) * 6;
-        const col = colors[Math.floor(Math.random() * colors.length)];
-        particles.push({ x, y, z: 0, vx, vy, vz, life: 1.0, color: col });
-      }
-    }
-    function createExplosion(x, y) {
-      const count = 150;
-      for (let i = 0; i < count; i++) {
-        const angle = Math.random() * 2 * Math.PI;
-        const speed = Math.random() * 3 + 1;
-        const vx = Math.sin(angle) * speed;
-        const vy = -Math.cos(angle) * speed;
-        const vz = (Math.random()-0.5) * 6;
-        const col = explosionColorsDefault[Math.floor(Math.random() * explosionColorsDefault.length)];
-        particles.push({ x, y, z: 0, vx, vy, vz, life: 1.0, color: col });
-      }
-    }
-    function createGhostExplosion(x, y) {
-      const count = 300;
-      for (let i = 0; i < count; i++) {
-        const angle = Math.random() * 2 * Math.PI;
-        const speed = Math.random() * 4 + 2;
-        const vx = Math.sin(angle) * speed;
-        const vy = -Math.cos(angle) * speed;
-        const vz = (Math.random()-0.5) * 8;
-        particles.push({ x, y, z: 0, vx, vy, vz, life: 1.0, color: ghostExplosionColor });
-      }
-    }
 
-    // Joystick variables
-    let moveForward = 0;
-    let turnDirection = 0;
-    const moveSpeed = 3.0;
-    const turnSpeed = 2.0;
-    const joystickRadius = 40;
-    let joystickActive = false;
-    let joystickPointerId = null;
-    let joystickCenterX = 0;
-    let joystickCenterY = 0;
-
-    // Keyboard input
-    const keys = {};
-
-    // Utility: Line-of-sight check (for sprites)
-    function lineOfSight(x1, y1, x2, y2) {
-      const dx = x2 - x1, dy = y2 - y1;
-      const dist = Math.hypot(dx, dy);
-      const steps = Math.ceil(dist / 0.1);
-      for (let i = 0; i <= steps; i++) {
-        const t = i / steps;
-        const x = x1 + dx * t, y = y1 + dy * t;
-        if (isWall(x, y)) return false;
+      // Canvas setup
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
       }
-      return true;
-    }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
 
-    // Level loading – save exit tile from an "E"
-    function loadLevel(index) {
-      currentLevel = index;
-      enemies = [];
-      projectiles = [];
-      particles = [];
-      pickups = [];
-      doorStates = {};
-      exitTile = null;
-      gameStartTime = performance.now();
-      gameOver = false;
-      player.health = 10;
-      player.weapon = "🍗";
-      inventory = ["🍗"];
-      const rows = levels[index];
-      levelData = [];
-      for (let y = 0; y < rows.length; y++) {
-        const rowStr = rows[y];
-        const rowArr = [];
-        for (let x = 0; x < rowStr.length; x++) {
-          const ch = rowStr[x];
-          if (ch === "#") {
-            rowArr.push(1);
-          } else if (ch === "d") {
-            rowArr.push(2); // closed door
-          } else if (ch === "E") {
-            rowArr.push(4); // end tile
-            exitTile = { x: x + 0.5, y: y + 0.5 };
-          } else if (ch === "P") {
-            player.x = x + 0.5;
-            player.y = y + 0.5;
-            player.angle = 0;
-            rowArr.push(0);
-          } else if (ch === "R") {
-            enemies.push({ x: x + 0.5, y: y + 0.5, dx: (Math.random()-0.5)*1.5, dy: (Math.random()-0.5)*1.5, isGhost: false, shootCooldown: 3.0 });
-            rowArr.push(0);
-          } else if (ch === "G") {
-            enemies.push({ x: x + 0.5, y: y + 0.5, dx: 0, dy: 0, isGhost: true, health: 2, shootCooldown: 1.0 });
-            rowArr.push(0);
-          } else if (ch === "K") {
-            pickups.push({ x: x + 0.5, y: y + 0.5, type: "rock" });
-            rowArr.push(0);
-          } else if (ch === "D") {
-            pickups.push({ x: x + 0.5, y: y + 0.5, type: "dagger" });
-            rowArr.push(0);
-          } else {
-            rowArr.push(0);
-          }
+      // UI elements
+      const overlay = document.getElementById('overlay');
+      const finalScreen = document.getElementById('finalScreen');
+      const finalTimeElem = document.getElementById('finalTime');
+      const finalScoreElem = document.getElementById('finalScore');
+      const playAgainBtn = document.getElementById('playAgainBtn');
+      const joystick = document.getElementById('joystick');
+      const joystickKnob = document.getElementById('joystickKnob');
+      const shootBtn = document.getElementById('shootBtn');
+      const swapBtn = document.getElementById('swapBtn');
+      const interactBtn = document.getElementById('interactBtn');
+      const strafeLeftBtn = document.getElementById('strafeLeftBtn');
+      const strafeRightBtn = document.getElementById('strafeRightBtn');
+
+      // Game state variables
+      let currentLevel = 0;
+      let score = 0;
+      let levelData = []; // 0: empty, 1: wall, 2: closed door, 3: open door, 4: end tile
+      let enemies = [];
+      let pickups = [];
+      let player = { x: 0, y: 0, angle: 0, health: 10, weapon: "🍗" };
+      let inventory = ["🍗"];
+      let projectiles = [];
+      let particles = [];
+      let gameStartTime = performance.now();
+      let gameOver = false;
+      let damageFlashTimer = 0;
+
+      // Door animation settings
+      let doorStates = {};
+      const doorSpeed = 0.5;
+      const doorMaxOffset = 50;
+
+      // Level definitions; "E" marks the end tile.
+      const levels = [
+        [
+          "###########",
+          "#P....R..E#",
+          "#.....K..#",
+          "#...d....#",
+          "#...#....#",
+          "#.....R..#",
+          "###########"
+        ],
+        [
+          "###############",
+          "#P...R...D...#",
+          "#.....#.......#",
+          "#..G..#...R..#",
+          "#.....#.....E#",
+          "#...R...G....#",
+          "###############"
+        ]
+      ];
+
+      // Colors & settings
+      const ceilingColor = "#005588";
+      const floorColor = "#444444";
+      const wallColor = "#c0c0c0";
+      const wallColorDark = "#888888";
+      const doorColor = "#8B4513";
+      const explosionColorsDefault = ["255,165,0", "255,100,0", "255,255,0"];
+      const ghostExplosionColor = "255,0,0";
+
+      // Explosion based on weapon type
+      function createExplosionForWeapon(x, y, weapon) {
+        let colors;
+        if (weapon === "🍗") {
+          colors = ["139,69,19", "255,255,255"];
+        } else if (weapon === "🪨") {
+          colors = ["0,0,0", "128,128,128"];
+        } else if (weapon === "🗡️") {
+          colors = ["192,192,192"];
+        } else {
+          colors = explosionColorsDefault;
         }
-        levelData.push(rowArr);
+        const count = 150;
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * 2 * Math.PI;
+          const speed = Math.random() * 3 + 1;
+          const vx = Math.sin(angle) * speed;
+          const vy = -Math.cos(angle) * speed;
+          const vz = (Math.random() - 0.5) * 6;
+          const col = colors[Math.floor(Math.random() * colors.length)];
+          particles.push({ x, y, z: 0, vx, vy, vz, life: 1.0, color: col });
+        }
       }
-    }
+      function createExplosion(x, y) {
+        const count = 150;
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * 2 * Math.PI;
+          const speed = Math.random() * 3 + 1;
+          const vx = Math.sin(angle) * speed;
+          const vy = -Math.cos(angle) * speed;
+          const vz = (Math.random() - 0.5) * 6;
+          const col = explosionColorsDefault[Math.floor(Math.random() * explosionColorsDefault.length)];
+          particles.push({ x, y, z: 0, vx, vy, vz, life: 1.0, color: col });
+        }
+      }
+      function createGhostExplosion(x, y) {
+        const count = 300;
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * 2 * Math.PI;
+          const speed = Math.random() * 4 + 2;
+          const vx = Math.sin(angle) * speed;
+          const vy = -Math.cos(angle) * speed;
+          const vz = (Math.random() - 0.5) * 8;
+          particles.push({ x, y, z: 0, vx, vy, vz, life: 1.0, color: ghostExplosionColor });
+        }
+      }
 
-    // isWall: cells with 1 (wall) or 2 (closed door) block movement.
-    function isWall(x, y) {
-      const mx = Math.floor(x), my = Math.floor(y);
-      if (my < 0 || my >= levelData.length || mx < 0 || mx >= levelData[0].length)
+      // Joystick variables
+      let moveForward = 0;
+      let turnDirection = 0;
+      const moveSpeed = 3.0;
+      const turnSpeed = 2.0;
+      const joystickRadius = 40;
+      let joystickActive = false;
+      let joystickPointerId = null;
+      let joystickCenterX = 0;
+      let joystickCenterY = 0;
+
+      // Keyboard input
+      const keys = {};
+
+      // Utility: Line-of-sight for sprites
+      function lineOfSight(x1, y1, x2, y2) {
+        const dx = x2 - x1, dy = y2 - y1;
+        const dist = Math.hypot(dx, dy);
+        const steps = Math.ceil(dist / 0.1);
+        for (let i = 0; i <= steps; i++) {
+          const t = i / steps;
+          const x = x1 + dx * t;
+          const y = y1 + dy * t;
+          if (isWall(x, y)) return false;
+        }
         return true;
-      return (levelData[my][mx] === 1 || levelData[my][mx] === 2);
-    }
-
-    // Update door animations – gradually open marked doors.
-    function updateDoors(dt) {
-      for (const key in doorStates) {
-        doorStates[key] += dt * doorSpeed;
-        if (doorStates[key] >= 1) {
-          const parts = key.split(',');
-          const mx = parseInt(parts[0], 10);
-          const my = parseInt(parts[1], 10);
-          levelData[my][mx] = 0;
-          delete doorStates[key];
-        }
       }
-    }
 
-    // Player shooting
-    function shoot() {
-      const dirX = Math.sin(player.angle);
-      const dirY = -Math.cos(player.angle);
-      const speed = 6.0;
-      projectiles.push({ x: player.x, y: player.y, dx: dirX * speed, dy: dirY * speed, rotation: 0, rotationSpeed: Math.PI * 2, weapon: player.weapon });
-    }
-
-    // Enemy shooting
-    function enemyShoot(enemy) {
-      const dx = player.x - enemy.x;
-      const dy = player.y - enemy.y;
-      const dist = Math.hypot(dx, dy);
-      const dirX = dx / dist;
-      const dirY = dy / dist;
-      const speed = enemy.isGhost ? 2.0 : 3.0;
-      projectiles.push({ x: enemy.x, y: enemy.y, dx: dirX * speed, dy: dirY * speed, rotation: 0, rotationSpeed: enemy.isGhost ? Math.PI : Math.PI * 2, weapon: "💥" });
-    }
-
-    // Swap weapon (player)
-    function swapWeapon() {
-      if (inventory.length < 2) return;
-      let idx = inventory.indexOf(player.weapon);
-      idx = (idx + 1) % inventory.length;
-      player.weapon = inventory[idx];
-      shootBtn.textContent = player.weapon;
-    }
-
-    // Interact: mark a door (cell value 2) for opening.
-    function interact() {
-      const interactDist = 1.0;
-      const doorX = player.x + Math.sin(player.angle) * interactDist;
-      const doorY = player.y - Math.cos(player.angle) * interactDist;
-      const mx = Math.floor(doorX);
-      const my = Math.floor(doorY);
-      if (my < 0 || my >= levelData.length || mx < 0 || mx >= levelData[0].length) return;
-      if (levelData[my][mx] === 2) {
-        const key = `${mx},${my}`;
-        if (doorStates[key] === undefined) {
-          doorStates[key] = 0;
-        }
-      }
-    }
-
-    // Final screen & restart
-    function showFinalScreen() {
-      finalTimeElem.textContent = "Time: " + Math.floor((performance.now() - gameStartTime) / 1000) + "s";
-      finalScoreElem.textContent = "Score: " + score;
-      finalScreen.style.display = "flex";
-    }
-    function restartGame() {
-      finalScreen.style.display = "none";
-      score = 0;
-      loadLevel(0);
-      gameStartTime = performance.now();
-      gameOver = false;
-      lastTime = performance.now();
-      requestAnimationFrame(gameLoop);
-    }
-    playAgainBtn.addEventListener("click", restartGame);
-
-    // Strafe buttons event handling
-    strafeLeftBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); strafeLeftActive = true; });
-    strafeLeftBtn.addEventListener('pointerup', (e) => { e.preventDefault(); strafeLeftActive = false; });
-    strafeRightBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); strafeRightActive = true; });
-    strafeRightBtn.addEventListener('pointerup', (e) => { e.preventDefault(); strafeRightActive = false; });
-
-    // Keyboard support for strafing: 'z' for left, 'x' for right.
-    window.addEventListener('keydown', (e) => {
-      if (e.key === "z") { keys["z"] = true; }
-      if (e.key === "x") { keys["x"] = true; }
-    });
-    window.addEventListener('keyup', (e) => {
-      if (e.key === "z") { keys["z"] = false; }
-      if (e.key === "x") { keys["x"] = false; }
-    });
-
-    // Joystick event handling
-    joystick.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      joystickActive = true;
-      joystickPointerId = e.pointerId;
-      const rect = joystick.getBoundingClientRect();
-      joystickCenterX = rect.left + rect.width / 2;
-      joystickCenterY = rect.top + rect.height / 2;
-      joystick.setPointerCapture(joystickPointerId);
-      const dx = e.clientX - joystickCenterX;
-      const dy = e.clientY - joystickCenterY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      let normX = dist ? dx / dist : 0, normY = dist ? dy / dist : 0;
-      if (dist > joystickRadius) { normX = dx / dist; normY = dy / dist; }
-      if (dist < 5) { normX = 0; normY = 0; }
-      moveForward = -normY;
-      turnDirection = normX;
-      joystickKnob.style.transform = `translate(-50%, -50%) translate(${normX * joystickRadius}px, ${normY * joystickRadius}px)`;
-    });
-    joystick.addEventListener('pointermove', (e) => {
-      if (!joystickActive || e.pointerId !== joystickPointerId) return;
-      const dx = e.clientX - joystickCenterX;
-      const dy = e.clientY - joystickCenterY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      let normX = dist ? dx / dist : 0, normY = dist ? dy / dist : 0;
-      if (dist > joystickRadius) { normX = dx / dist; normY = dy / dist; }
-      if (dist < 5) { normX = 0; normY = 0; }
-      moveForward = -normY;
-      turnDirection = normX;
-      joystickKnob.style.transform = `translate(-50%, -50%) translate(${normX * joystickRadius}px, ${normY * joystickRadius}px)`;
-    });
-    joystick.addEventListener('pointerup', (e) => {
-      if (e.pointerId !== joystickPointerId) return;
-      joystick.releasePointerCapture(joystickPointerId);
-      joystickActive = false;
-      joystickPointerId = null;
-      moveForward = 0;
-      turnDirection = 0;
-      joystickKnob.style.transform = 'translate(-50%, -50%)';
-    });
-    joystick.addEventListener('pointercancel', (e) => {
-      if (e.pointerId !== joystickPointerId) return;
-      joystickActive = false;
-      joystickPointerId = null;
-      moveForward = 0;
-      turnDirection = 0;
-      joystickKnob.style.transform = 'translate(-50%, -50%)';
-    });
-
-    // Shoot button & keyboard
-    shootBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); shoot(); });
-    window.addEventListener('keydown', (e) => {
-      keys[e.key] = true;
-      if (e.key === " ") { e.preventDefault(); shoot(); }
-    });
-    window.addEventListener('keyup', (e) => { keys[e.key] = false; });
-      
-    // Swap button & keyboard
-    swapBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); swapWeapon(); });
-    window.addEventListener('keydown', (e) => {
-      if (e.key === "q") { e.preventDefault(); swapWeapon(); }
-    });
-      
-    // Door interaction via interact button and "e" key.
-    window.addEventListener('keydown', (e) => {
-      if (e.key === "e") { e.preventDefault(); interact(); }
-    });
-    interactBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); interact(); });
-
-    // Main game loop – level advances only when all enemies are killed AND player is on an end tile.
-    function gameLoop(time) {
-      const dt = Math.min((time - lastTime) / 1000, 0.1);
-      lastTime = time;
-      if (!gameOver) {
-        let kbMove = 0, kbTurn = 0;
-        if (keys['w'] || keys['ArrowUp']) kbMove += 1;
-        if (keys['s'] || keys['ArrowDown']) kbMove -= 1;
-        if (keys['a'] || keys['ArrowLeft']) kbTurn -= 1;
-        if (keys['d'] || keys['ArrowRight']) kbTurn += 1;
-        const effectiveMove = (joystickActive ? moveForward : 0) + kbMove;
-        const effectiveTurn = (joystickActive ? turnDirection : 0) + kbTurn;
-          
-        player.angle += effectiveTurn * turnSpeed * dt;
-        if (player.angle < 0) player.angle += Math.PI * 2;
-        if (player.angle >= Math.PI * 2) player.angle -= Math.PI * 2;
-        if (effectiveMove !== 0) {
-          const step = effectiveMove * moveSpeed * dt;
-          const newX = player.x + Math.sin(player.angle) * step;
-          const newY = player.y - Math.cos(player.angle) * step;
-          if (!isWall(newX, player.y)) player.x = newX;
-          if (!isWall(player.x, newY)) player.y = newY;
-        }
-        // Process strafing
-        let strafe = 0;
-        if (keys["z"] || strafeLeftActive) strafe -= 1;
-        if (keys["x"] || strafeRightActive) strafe += 1;
-        if (strafe !== 0) {
-          const sStep = strafeSpeed * dt;
-          const newX = player.x + (strafe * Math.cos(player.angle)) * sStep;
-          const newY = player.y + (strafe * Math.sin(player.angle)) * sStep;
-          if (!isWall(newX, player.y)) player.x = newX;
-          if (!isWall(player.x, newY)) player.y = newY;
-        }
-          
-        // Process pickups
-        for (let i = 0; i < pickups.length; i++) {
-          const pu = pickups[i];
-          if (Math.hypot(player.x - pu.x, player.y - pu.y) < 0.5) {
-            if (!inventory.includes(pu.type === "rock" ? "🪨" : "🗡️"))
-              inventory.push(pu.type === "rock" ? "🪨" : "🗡️");
-            player.weapon = pu.type === "rock" ? "🪨" : "🗡️";
-            shootBtn.textContent = player.weapon;
-            score += 50;
-            pickups.splice(i, 1);
-            i--;
-          }
-        }
-          
-        // Process enemies and enemy shooting
-        for (let i = 0; i < enemies.length; i++) {
-          const enemy = enemies[i];
-          if (enemy.isGhost) {
-            if (enemy.shootCooldown === undefined) enemy.shootCooldown = 1.0;
-            enemy.shootCooldown -= dt;
-            if (enemy.shootCooldown <= 0) {
-              enemyShoot(enemy);
-              enemy.shootCooldown = 1.0;
-            }
-            const dx = player.x - enemy.x, dy = player.y - enemy.y;
-            const dist = Math.hypot(dx, dy);
-            const chaseSpeed = 2.5;
-            enemy.dx = (dx / dist) * chaseSpeed;
-            enemy.dy = (dy / dist) * chaseSpeed;
-          } else {
-            if (enemy.shootCooldown === undefined) enemy.shootCooldown = 3.0;
-            enemy.shootCooldown -= dt;
-            if (enemy.shootCooldown <= 0) {
-              enemyShoot(enemy);
-              enemy.shootCooldown = 3.0;
+      // Level loading – "E" marks exit; save its center in exitTile.
+      function loadLevel(index) {
+        currentLevel = index;
+        enemies = [];
+        projectiles = [];
+        particles = [];
+        pickups = [];
+        doorStates = {};
+        exitTile = null;
+        gameStartTime = performance.now();
+        gameOver = false;
+        player.health = 10;
+        player.weapon = "🍗";
+        inventory = ["🍗"];
+        const rows = levels[index];
+        levelData = [];
+        for (let y = 0; y < rows.length; y++) {
+          const rowStr = rows[y];
+          const rowArr = [];
+          for (let x = 0; x < rowStr.length; x++) {
+            const ch = rowStr[x];
+            if (ch === "#") {
+              rowArr.push(1);
+            } else if (ch === "d") {
+              rowArr.push(2);
+            } else if (ch === "E") {
+              rowArr.push(4);
+              exitTile = { x: x + 0.5, y: y + 0.5 };
+            } else if (ch === "P") {
+              player.x = x + 0.5;
+              player.y = y + 0.5;
+              player.angle = 0;
+              rowArr.push(0);
+            } else if (ch === "R") {
+              enemies.push({ x: x + 0.5, y: y + 0.5, dx: (Math.random() - 0.5) * 1.5, dy: (Math.random() - 0.5) * 1.5, isGhost: false, shootCooldown: 3.0 });
+              rowArr.push(0);
+            } else if (ch === "G") {
+              enemies.push({ x: x + 0.5, y: y + 0.5, dx: 0, dy: 0, isGhost: true, health: 2, shootCooldown: 1.0 });
+              rowArr.push(0);
+            } else if (ch === "K") {
+              pickups.push({ x: x + 0.5, y: y + 0.5, type: "rock" });
+              rowArr.push(0);
+            } else if (ch === "D") {
+              pickups.push({ x: x + 0.5, y: y + 0.5, type: "dagger" });
+              rowArr.push(0);
+            } else {
+              rowArr.push(0);
             }
           }
-          let newX = enemy.x + enemy.dx * dt;
-          let newY = enemy.y + enemy.dy * dt;
-          if (!isWall(newX, enemy.y)) enemy.x = newX; else enemy.dx = -enemy.dx;
-          if (!isWall(enemy.x, newY)) enemy.y = newY; else enemy.dy = -enemy.dy;
-          if (enemy.isGhost && Math.hypot(player.x - enemy.x, player.y - enemy.y) < 0.5) {
-            player.health--;
-            damageFlashTimer = 0.2;
-            enemy.x -= enemy.dx * dt * 2;
-            enemy.y -= enemy.dy * dt * 2;
-            if (player.health <= 0) gameOver = true;
+          levelData.push(rowArr);
+        }
+      }
+
+      // isWall: cells with 1 or 2 block movement.
+      function isWall(x, y) {
+        const mx = Math.floor(x);
+        const my = Math.floor(y);
+        if (my < 0 || my >= levelData.length || mx < 0 || mx >= levelData[0].length)
+          return true;
+        return (levelData[my][mx] === 1 || levelData[my][mx] === 2);
+      }
+
+      // Update door animations – open marked doors gradually.
+      function updateDoors(dt) {
+        for (const key in doorStates) {
+          doorStates[key] += dt * doorSpeed;
+          if (doorStates[key] >= 1) {
+            const parts = key.split(',');
+            const mx = parseInt(parts[0], 10);
+            const my = parseInt(parts[1], 10);
+            levelData[my][mx] = 0;
+            delete doorStates[key];
           }
         }
+      }
+
+      // Player shooting
+      function shoot() {
+        const dirX = Math.sin(player.angle);
+        const dirY = -Math.cos(player.angle);
+        const speed = 6.0;
+        projectiles.push({ x: player.x, y: player.y, dx: dirX * speed, dy: dirY * speed, rotation: 0, rotationSpeed: Math.PI * 2, weapon: player.weapon });
+      }
+
+      // Enemy shooting
+      function enemyShoot(enemy) {
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+        const dist = Math.hypot(dx, dy);
+        const dirX = dx / dist;
+        const dirY = dy / dist;
+        const speed = enemy.isGhost ? 2.0 : 3.0;
+        projectiles.push({ x: enemy.x, y: enemy.y, dx: dirX * speed, dy: dirY * speed, rotation: 0, rotationSpeed: enemy.isGhost ? Math.PI : Math.PI * 2, weapon: "💥" });
+      }
+
+      // Swap weapon
+      function swapWeapon() {
+        if (inventory.length < 2) return;
+        let idx = inventory.indexOf(player.weapon);
+        idx = (idx + 1) % inventory.length;
+        player.weapon = inventory[idx];
+        shootBtn.textContent = player.weapon;
+      }
+
+      // Interact: mark a door for opening.
+      function interact() {
+        const interactDist = 1.0;
+        const doorX = player.x + Math.sin(player.angle) * interactDist;
+        const doorY = player.y - Math.cos(player.angle) * interactDist;
+        const mx = Math.floor(doorX);
+        const my = Math.floor(doorY);
+        if (my < 0 || my >= levelData.length || mx < 0 || mx >= levelData[0].length) return;
+        if (levelData[my][mx] === 2) {
+          const key = `${mx},${my}`;
+          if (doorStates[key] === undefined) {
+            doorStates[key] = 0;
+          }
+        }
+      }
+
+      // Final screen & restart
+      function showFinalScreen() {
+        finalTimeElem.textContent = "Time: " + Math.floor((performance.now() - gameStartTime) / 1000) + "s";
+        finalScoreElem.textContent = "Score: " + score;
+        finalScreen.style.display = "flex";
+      }
+      function restartGame() {
+        finalScreen.style.display = "none";
+        score = 0;
+        loadLevel(0);
+        gameStartTime = performance.now();
+        gameOver = false;
+        lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
+      }
+      playAgainBtn.addEventListener("click", restartGame);
+
+      // Strafe button event handling
+      strafeLeftBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); strafeLeftActive = true; });
+      strafeLeftBtn.addEventListener('pointerup', (e) => { e.preventDefault(); strafeLeftActive = false; });
+      strafeRightBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); strafeRightActive = true; });
+      strafeRightBtn.addEventListener('pointerup', (e) => { e.preventDefault(); strafeRightActive = false; });
+
+      // Keyboard support for strafing: 'z' (left) and 'x' (right)
+      window.addEventListener('keydown', (e) => {
+        if (e.key === "z") { keys["z"] = true; }
+        if (e.key === "x") { keys["x"] = true; }
+      });
+      window.addEventListener('keyup', (e) => {
+        if (e.key === "z") { keys["z"] = false; }
+        if (e.key === "x") { keys["x"] = false; }
+      });
+
+      // Joystick event handling
+      joystick.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        joystickActive = true;
+        joystickPointerId = e.pointerId;
+        const rect = joystick.getBoundingClientRect();
+        joystickCenterX = rect.left + rect.width / 2;
+        joystickCenterY = rect.top + rect.height / 2;
+        joystick.setPointerCapture(joystickPointerId);
+        const dx = e.clientX - joystickCenterX;
+        const dy = e.clientY - joystickCenterY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        let normX = dist ? dx / dist : 0, normY = dist ? dy / dist : 0;
+        if (dist > joystickRadius) { normX = dx / dist; normY = dy / dist; }
+        if (dist < 5) { normX = 0; normY = 0; }
+        moveForward = -normY;
+        turnDirection = normX;
+        joystickKnob.style.transform = `translate(-50%, -50%) translate(${normX * joystickRadius}px, ${normY * joystickRadius}px)`;
+      });
+      joystick.addEventListener('pointermove', (e) => {
+        if (!joystickActive || e.pointerId !== joystickPointerId) return;
+        const dx = e.clientX - joystickCenterX;
+        const dy = e.clientY - joystickCenterY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        let normX = dist ? dx / dist : 0, normY = dist ? dy / dist : 0;
+        if (dist > joystickRadius) { normX = dx / dist; normY = dy / dist; }
+        if (dist < 5) { normX = 0; normY = 0; }
+        moveForward = -normY;
+        turnDirection = normX;
+        joystickKnob.style.transform = `translate(-50%, -50%) translate(${normX * joystickRadius}px, ${normY * joystickRadius}px)`;
+      });
+      joystick.addEventListener('pointerup', (e) => {
+        if (e.pointerId !== joystickPointerId) return;
+        joystick.releasePointerCapture(joystickPointerId);
+        joystickActive = false;
+        joystickPointerId = null;
+        moveForward = 0;
+        turnDirection = 0;
+        joystickKnob.style.transform = 'translate(-50%, -50%)';
+      });
+      joystick.addEventListener('pointercancel', (e) => {
+        if (e.pointerId !== joystickPointerId) return;
+        joystickActive = false;
+        joystickPointerId = null;
+        moveForward = 0;
+        turnDirection = 0;
+        joystickKnob.style.transform = 'translate(-50%, -50%)';
+      });
+
+      // Shoot button & keyboard
+      shootBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); shoot(); });
+      window.addEventListener('keydown', (e) => {
+        keys[e.key] = true;
+        if (e.key === " ") { e.preventDefault(); shoot(); }
+        if (e.key === "e") { e.preventDefault(); interact(); }
+        if (e.key === "q") { e.preventDefault(); swapWeapon(); }
+      });
+      window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+      swapBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); swapWeapon(); });
+      interactBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); interact(); });
+
+      // Main game loop – level advances only when all enemies are killed AND player is on an end tile.
+      function gameLoop(time) {
+        const dt = Math.min((time - lastTime) / 1000, 0.1);
+        lastTime = time;
+        if (!gameOver) {
+          let kbMove = 0, kbTurn = 0;
+          if (keys['w'] || keys['ArrowUp']) kbMove += 1;
+          if (keys['s'] || keys['ArrowDown']) kbMove -= 1;
+          if (keys['a'] || keys['ArrowLeft']) kbTurn -= 1;
+          if (keys['d'] || keys['ArrowRight']) kbTurn += 1;
+          const effectiveMove = (joystickActive ? moveForward : 0) + kbMove;
+          const effectiveTurn = (joystickActive ? turnDirection : 0) + kbTurn;
           
-        // Process projectiles
-        for (let i = 0; i < projectiles.length; i++) {
-          const proj = projectiles[i];
-          proj.x += proj.dx * dt;
-          proj.y += proj.dy * dt;
-          proj.rotation += proj.rotationSpeed * dt;
-          if (proj.weapon === "💥") {
-            if (Math.hypot(player.x - proj.x, player.y - proj.y) < 0.5) {
+          player.angle += effectiveTurn * turnSpeed * dt;
+          if (player.angle < 0) player.angle += Math.PI * 2;
+          if (player.angle >= Math.PI * 2) player.angle -= Math.PI * 2;
+          if (effectiveMove !== 0) {
+            const step = effectiveMove * moveSpeed * dt;
+            const newX = player.x + Math.sin(player.angle) * step;
+            const newY = player.y - Math.cos(player.angle) * step;
+            if (!isWall(newX, player.y)) player.x = newX;
+            if (!isWall(player.x, newY)) player.y = newY;
+          }
+          // Process strafing
+          let strafe = 0;
+          if (keys["z"] || strafeLeftActive) strafe -= 1;
+          if (keys["x"] || strafeRightActive) strafe += 1;
+          if (strafe !== 0) {
+            const sStep = strafeSpeed * dt;
+            const newX = player.x + (strafe * Math.cos(player.angle)) * sStep;
+            const newY = player.y + (strafe * Math.sin(player.angle)) * sStep;
+            if (!isWall(newX, player.y)) player.x = newX;
+            if (!isWall(player.x, newY)) player.y = newY;
+          }
+          // Process pickups
+          for (let i = 0; i < pickups.length; i++) {
+            const pu = pickups[i];
+            if (Math.hypot(player.x - pu.x, player.y - pu.y) < 0.5) {
+              if (!inventory.includes(pu.type === "rock" ? "🪨" : "🗡️"))
+                inventory.push(pu.type === "rock" ? "🪨" : "🗡️");
+              player.weapon = pu.type === "rock" ? "🪨" : "🗡️";
+              shootBtn.textContent = player.weapon;
+              score += 50;
+              pickups.splice(i, 1);
+              i--;
+            }
+          }
+          // Process enemies and enemy shooting
+          for (let i = 0; i < enemies.length; i++) {
+            const enemy = enemies[i];
+            if (enemy.isGhost) {
+              if (enemy.shootCooldown === undefined) enemy.shootCooldown = 1.0;
+              enemy.shootCooldown -= dt;
+              if (enemy.shootCooldown <= 0) {
+                enemyShoot(enemy);
+                enemy.shootCooldown = 1.0;
+              }
+              const dx = player.x - enemy.x;
+              const dy = player.y - enemy.y;
+              const dist = Math.hypot(dx, dy);
+              const chaseSpeed = 2.5;
+              enemy.dx = (dx / dist) * chaseSpeed;
+              enemy.dy = (dy / dist) * chaseSpeed;
+            } else {
+              if (enemy.shootCooldown === undefined) enemy.shootCooldown = 3.0;
+              enemy.shootCooldown -= dt;
+              if (enemy.shootCooldown <= 0) {
+                enemyShoot(enemy);
+                enemy.shootCooldown = 3.0;
+              }
+            }
+            let newX = enemy.x + enemy.dx * dt;
+            let newY = enemy.y + enemy.dy * dt;
+            if (!isWall(newX, enemy.y)) enemy.x = newX; else enemy.dx = -enemy.dx;
+            if (!isWall(enemy.x, newY)) enemy.y = newY; else enemy.dy = -enemy.dy;
+            if (enemy.isGhost && Math.hypot(player.x - enemy.x, player.y - enemy.y) < 0.5) {
               player.health--;
-              createExplosion(proj.x, proj.y);
+              damageFlashTimer = 0.2;
+              enemy.x -= enemy.dx * dt * 2;
+              enemy.y -= enemy.dy * dt * 2;
+              if (player.health <= 0) gameOver = true;
+            }
+          }
+          // Process projectiles
+          for (let i = 0; i < projectiles.length; i++) {
+            const proj = projectiles[i];
+            proj.x += proj.dx * dt;
+            proj.y += proj.dy * dt;
+            proj.rotation += proj.rotationSpeed * dt;
+            if (proj.weapon === "💥") {
+              if (Math.hypot(player.x - proj.x, player.y - proj.y) < 0.5) {
+                player.health--;
+                createExplosion(proj.x, proj.y);
+                projectiles.splice(i, 1);
+                i--;
+                continue;
+              }
+            }
+            if (isWall(proj.x, proj.y)) {
+              if (proj.weapon === "💥") {
+                createExplosion(proj.x, proj.y);
+              } else {
+                createExplosionForWeapon(proj.x, proj.y, proj.weapon);
+              }
               projectiles.splice(i, 1);
               i--;
               continue;
             }
-          }
-          if (isWall(proj.x, proj.y)) {
-            if (proj.weapon === "💥") {
-              createExplosion(proj.x, proj.y);
-            } else {
-              createExplosionForWeapon(proj.x, proj.y, proj.weapon);
+            if (proj.x < 0 || proj.y < 0 || proj.x >= levelData[0].length || proj.y >= levelData.length) {
+              projectiles.splice(i, 1);
+              i--;
+              continue;
             }
-            projectiles.splice(i, 1);
-            i--;
-            continue;
-          }
-          if (proj.x < 0 || proj.y < 0 || proj.x >= levelData[0].length || proj.y >= levelData.length) {
-            projectiles.splice(i, 1);
-            i--;
-            continue;
-          }
-          if (!lineOfSight(player.x, player.y, proj.x, proj.y)) continue;
-          if (proj.weapon !== "💥") {
-            for (let j = 0; j < enemies.length; j++) {
-              const enemy = enemies[j];
-              if (Math.hypot(enemy.x - proj.x, enemy.y - proj.y) < 0.5) {
-                if (enemy.isGhost) {
-                  enemy.health--;
-                  if (enemy.health <= 0) { createGhostExplosion(enemy.x, enemy.y); score += 300; enemies.splice(j, 1); j--; }
-                } else { createExplosion(enemy.x, enemy.y); score += 100; enemies.splice(j, 1); j--; }
-                projectiles.splice(i, 1);
-                i--;
-                break;
+            if (!lineOfSight(player.x, player.y, proj.x, proj.y)) continue;
+            if (proj.weapon !== "💥") {
+              for (let j = 0; j < enemies.length; j++) {
+                const enemy = enemies[j];
+                if (Math.hypot(enemy.x - proj.x, enemy.y - proj.y) < 0.5) {
+                  if (enemy.isGhost) {
+                    enemy.health--;
+                    if (enemy.health <= 0) {
+                      createGhostExplosion(enemy.x, enemy.y);
+                      score += 300;
+                      enemies.splice(j, 1);
+                      j--;
+                    }
+                  } else {
+                    createExplosion(enemy.x, enemy.y);
+                    score += 100;
+                    enemies.splice(j, 1);
+                    j--;
+                  }
+                  projectiles.splice(i, 1);
+                  i--;
+                  break;
+                }
               }
             }
           }
+          // Process explosion particles
+          for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.z += p.vz * dt;
+            p.life -= dt;
+            if (p.life <= 0) { particles.splice(i, 1); i--; }
+          }
+          // Update door animations
+          updateDoors(dt);
+          // Level progression: Only when all enemies are killed AND player is on an end tile.
+          if (enemies.length === 0 && checkEndTile()) {
+            if (currentLevel < levels.length - 1) loadLevel(currentLevel + 1);
+            else gameOver = true;
+          }
+          if (damageFlashTimer > 0) damageFlashTimer = Math.max(damageFlashTimer - dt, 0);
+          const elapsedTime = Math.floor((performance.now() - gameStartTime) / 1000);
+          let roosterCount = 0, ghostCount = 0;
+          for (const enemy of enemies) { enemy.isGhost ? ghostCount++ : roosterCount++; }
+          overlay.textContent = `Level: ${currentLevel+1} | Roosters: ${roosterCount} | Ghosts: ${ghostCount} | HP: ${player.health} | Weapon: ${player.weapon} | Time: ${elapsedTime}s | Score: ${score}`;
+          shootBtn.textContent = player.weapon;
+          if (player.health <= 0) gameOver = true;
+          renderScene();
+          if (gameOver) { showFinalScreen(); return; }
+          requestAnimationFrame(gameLoop);
+        } else {
+          showFinalScreen();
         }
-          
-        // Process explosion particles
-        for (let i = 0; i < particles.length; i++) {
-          const p = particles[i];
-          p.x += p.vx * dt;
-          p.y += p.vy * dt;
-          p.z += p.vz * dt;
-          p.life -= dt;
-          if (p.life <= 0) { particles.splice(i, 1); i--; }
-        }
-          
-        // Update door animations
-        updateDoors(dt);
-          
-        // Level progression: Only when all enemies are killed AND player is on an end tile.
-        if (enemies.length === 0 && checkEndTile()) {
-          if (currentLevel < levels.length - 1) loadLevel(currentLevel + 1);
-          else gameOver = true;
-        }
-        if (damageFlashTimer > 0) damageFlashTimer = Math.max(damageFlashTimer - dt, 0);
-        const elapsedTime = Math.floor((performance.now() - gameStartTime) / 1000);
-        let roosterCount = 0, ghostCount = 0;
-        for (const enemy of enemies) { enemy.isGhost ? ghostCount++ : roosterCount++; }
-        overlay.textContent = `Level: ${currentLevel+1} | Roosters: ${roosterCount} | Ghosts: ${ghostCount} | HP: ${player.health} | Weapon: ${player.weapon} | Time: ${elapsedTime}s | Score: ${score}`;
-        shootBtn.textContent = player.weapon;
-        if (player.health <= 0) gameOver = true;
-        renderScene();
-        if (gameOver) { showFinalScreen(); return; }
-        requestAnimationFrame(gameLoop);
       }
-          
-      // Render function for drawing the scene (with door offset and drawing "exit" text)
+
+      // Render scene (walls, sprites, exit text)
       function renderScene() {
-        const w = canvas.width, h = canvas.height;
+        const w = canvas.width;
+        const h = canvas.height;
         ctx.fillStyle = ceilingColor;
-        ctx.fillRect(0, 0, w, h/2);
+        ctx.fillRect(0, 0, w, h / 2);
         ctx.fillStyle = floorColor;
-        ctx.fillRect(0, h/2, w, h/2);
+        ctx.fillRect(0, h / 2, w, h / 2);
         const posX = player.x, posY = player.y;
         const dirX = Math.sin(player.angle), dirY = -Math.cos(player.angle);
         const fov = 1.0472;
-        const planeLen = Math.tan(fov/2);
+        const planeLen = Math.tan(fov / 2);
         const planeX = -dirY * planeLen, planeY = dirX * planeLen;
         for (let x = 0; x < w; x++) {
           const cameraX = 2 * x / w - 1;
@@ -756,22 +750,39 @@
           const deltaDistX = (rayDirX === 0) ? Infinity : Math.abs(1 / rayDirX);
           const deltaDistY = (rayDirY === 0) ? Infinity : Math.abs(1 / rayDirY);
           let stepX, stepY, hit = 0, side = 0;
-          if (rayDirX < 0) { stepX = -1; sideDistX = (posX - mapX) * deltaDistX; }
-          else { stepX = 1; sideDistX = (mapX + 1 - posX) * deltaDistX; }
-          if (rayDirY < 0) { stepY = -1; sideDistY = (posY - mapY) * deltaDistY; }
-          else { stepY = 1; sideDistY = (mapY + 1 - posY) * deltaDistY; }
+          if (rayDirX < 0) {
+            stepX = -1;
+            sideDistX = (posX - mapX) * deltaDistX;
+          } else {
+            stepX = 1;
+            sideDistX = (mapX + 1 - posX) * deltaDistX;
+          }
+          if (rayDirY < 0) {
+            stepY = -1;
+            sideDistY = (posY - mapY) * deltaDistY;
+          } else {
+            stepY = 1;
+            sideDistY = (mapY + 1 - posY) * deltaDistY;
+          }
           while (hit === 0) {
-            if (sideDistX < sideDistY) { sideDistX += deltaDistX; mapX += stepX; side = 0; }
-            else { sideDistY += deltaDistY; mapY += stepY; side = 1; }
+            if (sideDistX < sideDistY) {
+              sideDistX += deltaDistX;
+              mapX += stepX;
+              side = 0;
+            } else {
+              sideDistY += deltaDistY;
+              mapY += stepY;
+              side = 1;
+            }
             if (mapX < 0 || mapX >= levelData[0].length || mapY < 0 || mapY >= levelData.length) { hit = 1; break; }
             if (levelData[mapY][mapX] === 1 || levelData[mapY][mapX] === 2 || levelData[mapY][mapX] === 4) hit = 1;
           }
           let perpWallDist = (side === 0) ? sideDistX - deltaDistX : sideDistY - deltaDistY;
           if (perpWallDist < 0.01) perpWallDist = 0.01;
           const lineHeight = Math.floor(h / perpWallDist);
-          let drawStart = Math.floor(-lineHeight/2 + h/2);
+          let drawStart = Math.floor(-lineHeight / 2 + h / 2);
           if (drawStart < 0) drawStart = 0;
-          let drawEnd = Math.floor(lineHeight/2 + h/2);
+          let drawEnd = Math.floor(lineHeight / 2 + h / 2);
           if (drawEnd >= h) drawEnd = h - 1;
           if (levelData[mapY][mapX] === 2) {
             const doorKey = `${mapX},${mapY}`;
@@ -849,10 +860,9 @@
             ctx.fillText(spr.char, spr.x, halfH);
           } else if (spr.type === 'particle') {
             ctx.fillStyle = "rgba(" + spr.color + "," + spr.alpha.toFixed(2) + ")";
-            ctx.fillRect(spr.x - spr.height/2, halfH - spr.yOffset - spr.height/2, spr.height, spr.height);
+            ctx.fillRect(spr.x - spr.height / 2, halfH - spr.yOffset - spr.height / 2, spr.height, spr.height);
           }
         }
-        // Draw "exit" text over the exit tile if visible.
         if (exitTile && lineOfSight(player.x, player.y, exitTile.x, exitTile.y)) {
           const dx = exitTile.x - posX;
           const dy = exitTile.y - posY;
@@ -871,7 +881,7 @@
         }
       }
 
-      // Keyboard & joystick event handling
+      // Keyboard event handling
       window.addEventListener('keydown', (e) => {
         keys[e.key] = true;
         if (e.key === " ") { e.preventDefault(); shoot(); }
@@ -879,12 +889,13 @@
         if (e.key === "q") { e.preventDefault(); swapWeapon(); }
       });
       window.addEventListener('keyup', (e) => { keys[e.key] = false; });
-      
+
+      // Shoot, swap, and interact buttons
       shootBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); shoot(); });
       swapBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); swapWeapon(); });
       interactBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); interact(); });
 
-      // Joystick event handling (as before)
+      // Joystick event handling
       joystick.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         joystickActive = true;
@@ -933,7 +944,7 @@
         joystickKnob.style.transform = 'translate(-50%, -50%)';
       });
 
-      // Start the game loop
+      // Start game loop
       loadLevel(0);
       requestAnimationFrame(gameLoop);
     })();

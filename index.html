@@ -2,9 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!-- Retro font -->
   <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
-  <!-- Viewport & PWA manifest -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="manifest" href="manifest.json">
   <title>Emoji FPS Game - Retro Edition</title>
@@ -135,7 +133,7 @@
       touch-action: none;
       z-index: 10;
     }
-  
+
     /* Strafe buttons */
     #strafeLeftBtn, #strafeRightBtn {
       position: absolute;
@@ -166,7 +164,6 @@
     <p id="finalScore"></p>
     <div id="playAgainBtn">Play Again</div>
   </div>
-  <!-- On-screen controls -->
   <div id="joystick"><div id="joystickKnob"></div></div>
   <div id="strafeLeftBtn">←</div>
   <div id="strafeRightBtn">→</div>
@@ -250,19 +247,19 @@
           "###########"
         ],
 [
-    "#########################",  
-    "#.......#.......#.......#",   
-    "#...P...d...G...d...R...#",   
-    "#.......#.......#.......#",   
-    "####d#######d#######d####",   
-    "#.......#.......#.......#",   
-    "#...R...d...D...d...H...#",   
-    "#.......#.......#.......#",   
-    "####d#######d#######d####",   
-    "#.......#.......#.......#",   
-    "#...R...d...D...d...E...#",   
-    "#.......#.......#.......#",   
-    "#########################"   
+    "#########################",
+    "#.......#.......#.......#",
+    "#...P...d...G...d...R...#",
+    "#.......#.......#.......#",
+    "####d#######d#######d####",
+    "#.......#.......#.......#",
+    "#...R...d...D...d...H...#",
+    "#.......#.......#.......#",
+    "####d#######d#######d####",
+    "#.......#.......#.......#",
+    "#...R...d...D...d...E...#",
+    "#.......#.......#.......#",
+    "#########################"
 ],
 
   [
@@ -308,39 +305,39 @@
     "#########################################"  // # Row 20: Outer bottom border
 ],
   [
-    "#################################################",  
-    "#...........#...........#...........#...........#",  
-    "#...........#...........#...........#...........#",  
-    "#...........#...........#...........#...........#", 
-    "#.....P.....d.....G.....#.....R.....d.....D.....#", 
-    "#...........#...........#...........#...........#", 
-    "#...........#...........#...........#...........#", 
-    "#...........#...........#...........#...........#", 
-    "##################d###########d############d#####",  
-    "#...........#...........#...........#...........#",  
-    "#...........#...........#...........#...........#",  
-    "#...........#...........#...........#...........#",  
-    "#.....R.....d.....D.....#.....H.....d.....G.....#",  
-    "#...........#...........#...........#...........#",  
-    "#...........#...........#...........#...........#", 
-    "#...........#...........#...........#......G....#", 
-    "##################d###########d############d#####",  
-    "#...........#...........#...........#...........#", 
-    "#...........#.HH....HH..#...........#.........R.#",  
-    "#...........#H...H.H..H.#...........#..R........#",  
-    "#.....D.....d.H...H....H#...........#.....R.....#", 
-    "#...........#..H......H.#...........#...........#",  
-    "#...........#....H...H..#...........#...........#",  
-    "#...........#......H....#...........#.....R.....#",  
-    "#######d###########d##########d###########d######",  
-    "#...........#...........#...........#...........#",  
-    "#...........#...........#...........#...........#",  
-    "#...........#...........#...........#...........#",  
-    "#.....G.....#...........d.....D.....#.....E.....#",  
-    "#...........#...........#...........#...........#",  
-    "#...........#...........#...........#...........#",  
-    "#...........#...........#...........#...........#",  
-    "#################################################",   
+    "#################################################",
+    "#...........#...........#...........#...........#",
+    "#...........#...........#...........#...........#",
+    "#...........#...........#...........#...........#",
+    "#.....P.....d.....G.....#.....R.....d.....D.....#",
+    "#...........#...........#...........#...........#",
+    "#...........#...........#...........#...........#",
+    "#...........#...........#...........#...........#",
+    "##################d###########d############d#####",
+    "#...........#...........#...........#...........#",
+    "#...........#...........#...........#...........#",
+    "#...........#...........#...........#...........#",
+    "#.....R.....d.....D.....#.....H.....d.....G.....#",
+    "#...........#...........#...........#...........#",
+    "#...........#...........#...........#...........#",
+    "#...........#...........#...........#......G....#",
+    "##################d###########d############d#####",
+    "#...........#...........#...........#...........#",
+    "#...........#.HH....HH..#...........#.........R.#",
+    "#...........#H...H.H..H.#...........#..R........#",
+    "#.....D.....d.H...H....H#...........#.....R.....#",
+    "#...........#..H......H.#...........#...........#",
+    "#...........#....H...H..#...........#...........#",
+    "#...........#......H....#...........#.....R.....#",
+    "#######d###########d##########d###########d######",
+    "#...........#...........#...........#...........#",
+    "#...........#...........#...........#...........#",
+    "#...........#...........#...........#...........#",
+    "#.....G.....#...........d.....D.....#.....E.....#",
+    "#...........#...........#...........#...........#",
+    "#...........#...........#...........#...........#",
+    "#...........#...........#...........#...........#",
+    "#################################################",
 ]
       ];
 
@@ -413,6 +410,125 @@
 
       // Keyboard input
       const keys = {};
+
+      // --- Gamepad API Integration ---
+      let gamepad = null; // Variable to hold the connected gamepad
+      const gamepadThreshold = 0.1; // Deadzone for analog sticks
+
+      // Listen for gamepad connection
+      window.addEventListener("gamepadconnected", (event) => {
+          console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
+              event.gamepad.index, event.gamepad.id,
+              event.gamepad.buttons.length, event.gamepad.axes.length);
+          gamepad = event.gamepad; // Store the connected gamepad
+          // Optional: Display a message to the user that a gamepad is connected
+      });
+
+      // Listen for gamepad disconnection
+      window.addEventListener("gamepaddisconnected", (event) => {
+          console.log("Gamepad disconnected from index %d: %s",
+              event.gamepad.index, event.gamepad.id);
+          gamepad = null; // Clear the gamepad reference
+          // Optional: Display a message to the user that the gamepad is disconnected
+      });
+
+      // Function to poll for gamepad state
+      function pollGamepad() {
+          if (!gamepad) {
+              // Attempt to get gamepads if none is currently assigned
+              const gamepads = navigator.getGamepads();
+              for (let i = 0; i < gamepads.length; i++) {
+                  if (gamepads[i]) {
+                      gamepad = gamepads[i];
+                      console.log("Found gamepad at index %d after polling: %s", gamepad.index, gamepad.id);
+                      break; // Use the first found gamepad
+                  }
+              }
+          }
+
+          if (gamepad) {
+              // Update gamepad state (needed for polling)
+              const currentGamepad = navigator.getGamepads()[gamepad.index];
+              if (!currentGamepad) {
+                  // Gamepad disconnected since last check
+                  console.log("Gamepad disconnected during polling from index %d: %s", gamepad.index, gamepad.id);
+                  gamepad = null;
+                  return;
+              }
+              gamepad = currentGamepad; // Update the gamepad reference with current state
+
+              // Map Gamepad inputs to game actions
+              // Assuming a standard Xbox-style controller mapping:
+              // Axes: 0 = Left Stick X, 1 = Left Stick Y, 2 = Right Stick X, 3 = Right Stick Y
+              // Buttons: 0 = A, 1 = B, 2 = X, 3 = Y, 4 = LB, 5 = RB, 6 = LT, 7 = RT, 8 = Back, 9 = Start, 10 = Left Stick Click, 11 = Right Stick Click, 12 = D-Pad Up, 13 = D-Pad Down, 14 = D-Pad Left, 15 = D-Pad Right
+
+              // Movement (Left Stick Y)
+              // The actual movement application is done in gameLoop, combining all inputs
+              moveForward = 0; // Reset touch joystick/keyboard move input if gamepad is active
+              if (Math.abs(gamepad.axes[1]) > gamepadThreshold) {
+                  moveForward = -gamepad.axes[1]; // Invert Y axis for forward/backward
+              }
+
+              // Turning (Left Stick X) - Using left stick for turning as per current touch/keyboard
+              // The actual turning application is done in gameLoop, combining all inputs
+              turnDirection = 0; // Reset touch joystick/keyboard turn input if gamepad is active
+              if (Math.abs(gamepad.axes[0]) > gamepadThreshold) {
+                   turnDirection = gamepad.axes[0];
+              }
+
+              // Strafe (D-Pad Left/Right or Right Stick X)
+              // The actual strafing application is done in gameLoop, combining all inputs
+              strafeLeftActive = false; // Reset keyboard/button strafe input if gamepad is active
+              strafeRightActive = false; // Reset keyboard/button strafe input if gamepad is active
+              if ((gamepad.buttons[14] && gamepad.buttons[14].pressed)/* D-Pad Left */ || (Math.abs(gamepad.axes[2]) > gamepadThreshold && gamepad.axes[2] < 0) /* Right Stick Left */) {
+                  strafeLeftActive = true;
+              }
+              if ((gamepad.buttons[15] && gamepad.buttons[15].pressed)/* D-Pad Right */ || (Math.abs(gamepad.axes[2]) > gamepadThreshold && gamepad.axes[2] > 0) /* Right Stick Right */) {
+                  strafeRightActive = true;
+              }
+
+
+              // Shoot (A button or Right Trigger)
+              // We need to add a cooldown mechanism for continuous shooting if a button is held
+              // For simplicity, let's map to a single press for now or check `pressed` state
+              // Using a simple flag to prevent rapid firing on hold
+              if (((gamepad.buttons[0] && gamepad.buttons[0].pressed) || (gamepad.buttons[7] && gamepad.buttons[7].value > gamepadThreshold)) && !gamepad._isShooting) {
+                   shoot();
+                   gamepad._isShooting = true; // Set flag to true to indicate shooting
+              } else if (!((gamepad.buttons[0] && gamepad.buttons[0].pressed) || (gamepad.buttons[7] && gamepad.buttons[7].value > gamepadThreshold))) {
+                   gamepad._isShooting = false; // Reset flag when button is released
+              }
+
+
+              // Interact (B button)
+              // Using a simple flag to prevent multiple interactions on hold
+              if ((gamepad.buttons[1] && gamepad.buttons[1].pressed) && !gamepad._isInteracting) {
+                  interact();
+                  gamepad._isInteracting = true; // Set flag to true to indicate interacting
+              } else if (!(gamepad.buttons[1] && gamepad.buttons[1].pressed)) {
+                  gamepad._isInteracting = false; // Reset flag when button is released
+              }
+
+              // Swap Weapon (Y button)
+               // Using a simple flag to prevent multiple swaps on hold
+               if ((gamepad.buttons[3] && gamepad.buttons[3].pressed) && !gamepad._isSwapping) {
+                  swapWeapon();
+                  gamepad._isSwapping = true; // Set flag to true to indicate swapping
+               } else if (!(gamepad.buttons[3] && gamepad.buttons[3].pressed)) {
+                  gamepad._isSwapping = false; // Reset flag when button is released
+               }
+
+
+              // You can add mappings for other buttons (e.g., Start for pause) as needed.
+              // Example: Pause on Start button press (Button 9)
+              // if (gamepad.buttons[9] && gamepad.buttons[9].pressed) {
+              //     // Add your pause logic here
+              //     console.log("Start button pressed - Pause game");
+              // }
+          }
+      }
+      // --- End Gamepad API Integration ---
+
 
       // Utility: Line-of-sight check (for sprites)
       function lineOfSight(x1, y1, x2, y2) {
@@ -639,12 +755,18 @@
       // Shoot, swap, and interact keyboard events
       window.addEventListener('keydown', (e) => {
         keys[e.key] = true;
-        if (e.key === " ") { e.preventDefault(); shoot(); }
-        if (e.key === "e") { e.preventDefault(); interact(); }
-        if (e.key === "q") { e.preventDefault(); swapWeapon(); }
+        // Prevent default for spacebar to avoid scrolling
+        if (e.key === " ") { e.preventDefault(); }
       });
-      window.addEventListener('keyup', (e) => { keys[e.key] = false; });
-      
+      window.addEventListener('keyup', (e) => {
+         keys[e.key] = false;
+         // Trigger actions on keyup for discrete events (like shoot, interact, swap)
+         if (e.key === " ") { shoot(); }
+         if (e.key === "e") { interact(); }
+         if (e.key === "q") { swapWeapon(); }
+      });
+
+
       shootBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); shoot(); });
       interactBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); interact(); });
 
@@ -652,18 +774,21 @@
       function gameLoop(time) {
         const dt = Math.min((time - lastTime) / 1000, 0.1);
         lastTime = time;
+
         if (!gameOver) {
-          let kbMove = 0, kbTurn = 0;
-          if (keys['w'] || keys['ArrowUp']) kbMove += 1;
-          if (keys['s'] || keys['ArrowDown']) kbMove -= 1;
-          if (keys['a'] || keys['ArrowLeft']) kbTurn -= 1;
-          if (keys['d'] || keys['ArrowRight']) kbTurn += 1;
-          const effectiveMove = (joystickActive ? moveForward : 0) + kbMove;
-          const effectiveTurn = (joystickActive ? turnDirection : 0) + kbTurn;
-          
+          // Poll for gamepad state at the beginning of each frame
+          pollGamepad();
+
+          // Combine gamepad and other inputs
+          // If a gamepad is connected, prioritize its analog stick input for movement and turning.
+          // Otherwise, use joystick/keyboard input.
+          const effectiveMove = gamepad ? (Math.abs(gamepad.axes[1]) > gamepadThreshold ? -gamepad.axes[1] : 0) : ((joystickActive ? moveForward : 0) + (keys['w'] || keys['ArrowUp'] ? 1 : 0) + (keys['s'] || keys['ArrowDown'] ? -1 : 0));
+          const effectiveTurn = gamepad ? (Math.abs(gamepad.axes[0]) > gamepadThreshold ? gamepad.axes[0] : 0) : ((joystickActive ? turnDirection : 0) + (keys['a'] || keys['ArrowLeft'] ? -1 : 0) + (keys['d'] || keys['ArrowRight'] ? 1 : 0));
+
           player.angle += effectiveTurn * turnSpeed * dt;
           if (player.angle < 0) player.angle += Math.PI * 2;
           if (player.angle >= Math.PI * 2) player.angle -= Math.PI * 2;
+
           if (effectiveMove !== 0) {
             const step = effectiveMove * moveSpeed * dt;
             const newX = player.x + Math.sin(player.angle) * step;
@@ -671,10 +796,21 @@
             if (!isWall(newX, player.y)) player.x = newX;
             if (!isWall(player.x, newY)) player.y = newY;
           }
-          // Process strafing: keyboard ('z' for left, 'x' for right) and on-screen buttons.
+
+          // Process strafing: keyboard ('z' for left, 'x' for right), on-screen buttons, and gamepad.
           let strafe = 0;
           if (keys["z"] || strafeLeftActive) strafe -= 1;
           if (keys["x"] || strafeRightActive) strafe += 1;
+           if (gamepad) {
+              // Prioritize gamepad strafe if analog stick is used, otherwise use D-pad
+              if (Math.abs(gamepad.axes[2]) > gamepadThreshold) {
+                  strafe = gamepad.axes[2]; // Use right stick X for strafe
+              } else {
+                  if (gamepad.buttons[14] && gamepad.buttons[14].pressed) strafe -= 1; // D-Pad Left
+                  if (gamepad.buttons[15] && gamepad.buttons[15].pressed) strafe += 1; // D-Pad Right
+              }
+          }
+
           if (strafe !== 0) {
             const sStep = strafeSpeed * dt;
             const newX = player.x + (strafe * Math.cos(player.angle)) * sStep;
@@ -682,7 +818,7 @@
             if (!isWall(newX, player.y)) player.x = newX;
             if (!isWall(player.x, newY)) player.y = newY;
           }
-          
+
           // Process pickups
           for (let i = 0; i < pickups.length; i++) {
             const pu = pickups[i];
@@ -702,7 +838,7 @@
               i--;
             }
           }
-          
+
           // Process enemies and enemy shooting
           for (let i = 0; i < enemies.length; i++) {
             const enemy = enemies[i];
@@ -739,7 +875,7 @@
               if (player.health <= 0) gameOver = true;
             }
           }
-          
+
           // Process projectiles
           for (let i = 0; i < projectiles.length; i++) {
             const proj = projectiles[i];
@@ -796,7 +932,7 @@
               }
             }
           }
-          
+
           // Process explosion particles
           for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
@@ -806,10 +942,10 @@
             p.life -= dt;
             if (p.life <= 0) { particles.splice(i, 1); i--; }
           }
-          
+
           // Update door animations
           updateDoors(dt);
-          
+
           // Level progression: Only progress when all enemies are killed AND player is on an end tile.
           if (enemies.length === 0 && checkEndTile()) {
             if (currentLevel < levels.length - 1) loadLevel(currentLevel + 1);
@@ -987,12 +1123,18 @@
       // Keyboard event handling
       window.addEventListener('keydown', (e) => {
         keys[e.key] = true;
-        if (e.key === " ") { e.preventDefault(); shoot(); }
-        if (e.key === "e") { e.preventDefault(); interact(); }
+        // Prevent default for spacebar to avoid scrolling
+        if (e.key === " ") { e.preventDefault(); }
       });
-      window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+      window.addEventListener('keyup', (e) => {
+         keys[e.key] = false;
+         // Trigger actions on keyup for discrete events (like shoot, interact, swap)
+         if (e.key === " ") { shoot(); }
+         if (e.key === "e") { interact(); }
+         if (e.key === "q") { swapWeapon(); }
+      });
 
-      // Shoot, swap, and interact buttons
+
       shootBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); shoot(); });
       interactBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); interact(); });
 
@@ -1044,6 +1186,7 @@
         turnDirection = 0;
         joystickKnob.style.transform = 'translate(-50%, -50%)';
       });
+
 
       // Start the game loop
       loadLevel(0);

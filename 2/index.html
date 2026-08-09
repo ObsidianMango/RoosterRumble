@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#080808">
   <title>Rooster Rumble 2.0</title>
   <style>
-    html,body{margin:0;width:100%;height:100%;display:grid;place-items:center;background:#080808;color:#f6f1df;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+    html,body{margin:0;width:100%;height:100%;display:grid;place-items:center;background:#080808;color:#f6f1df;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;touch-action:none;overscroll-behavior:none}
     #status{text-align:center;padding:24px}#bird{font-size:72px;margin-bottom:12px}#error{display:none;color:#ff7777;max-width:520px;line-height:1.5}
   </style>
 </head>
@@ -15,12 +15,37 @@
   <script>
     (async () => {
       try {
-        const response = await fetch('./game-source.html?hotfix=1', { cache: 'no-store' });
+        const response = await fetch('./game-source.html?hotfix=2', { cache: 'no-store' });
         if (!response.ok) throw new Error(`Source load failed (${response.status})`);
         let source = await response.text();
         source = source
           .replace("'#..R....d....######d########'", "'#..R....d....######d#######'")
           .replace("'######d############d########'", "'######d############d#######'");
+
+        const antiZoom = `
+<style>
+  html, body, body * { touch-action: none !important; -webkit-touch-callout: none; }
+</style>
+<script>
+  (() => {
+    const stop = e => e.preventDefault();
+    document.addEventListener('dblclick', stop, { passive: false });
+    document.addEventListener('gesturestart', stop, { passive: false });
+    document.addEventListener('gesturechange', stop, { passive: false });
+    document.addEventListener('gestureend', stop, { passive: false });
+    document.addEventListener('touchmove', e => {
+      if (e.touches && e.touches.length > 1) e.preventDefault();
+    }, { passive: false });
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', e => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 350) e.preventDefault();
+      lastTouchEnd = now;
+    }, { passive: false, capture: true });
+  })();
+<\/script>`;
+
+        source = source.replace('</head>', antiZoom + '\n</head>');
         document.open();
         document.write(source);
         document.close();

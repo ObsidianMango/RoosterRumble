@@ -1,10 +1,13 @@
 {
-  "name": "Emoji FPS Game - Retro Edition",
-  "short_name": "EmojiFPS",
+  "name": "Rooster Rumble 2.0",
+  "short_name": "RoosterRumble",
+  "description": "A pseudo-3D emoji FPS about poultry, ghosts, and weaponized lunch.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "orientation": "any",
+  "background_color": "#080808",
+  "theme_color": "#080808",
   "icons": [
     {
       "src": "icons/icon-192.png",

@@ -1,5 +1,5 @@
-const CACHE_NAME = 'rooster-rumble-v2-scoped';
-const APP_SHELL = ['./index.html', './manifest.json'];
+const CACHE_NAME = 'rooster-rumble-v2-scoped-hotfix1';
+const APP_SHELL = ['./index.html', './game-source.html', './manifest.json'];
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -7,7 +7,11 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then(keys => Promise.all(
+      keys.filter(key => key.startsWith('rooster-rumble-v2-scoped') && key !== CACHE_NAME).map(key => caches.delete(key))
+    )).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', event => {
